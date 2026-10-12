@@ -6,32 +6,40 @@
     <title>손 씻기 넛지(Nudge) 실험</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap');
-        body { font-family: 'Noto Sans KR', sans-serif; background-color: #f5f6fa; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; }
-        h1 { color: #2c3e50; font-size: 24px; margin-bottom: 8px; }
-        .subtitle { color: #7f8c8d; margin-bottom: 40px; font-size: 15px; font-weight: 500; }
-        .soap-container { display: flex; gap: 40px; justify-content: center; margin-bottom: 40px; flex-wrap: wrap; }
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: #f5f6fa; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; overflow-x: hidden; }
+        h1 { color: #2c3e50; font-size: 24px; margin-bottom: 8px; margin-top: 20px; }
+        .subtitle { color: #7f8c8d; margin-bottom: 30px; font-size: 15px; font-weight: 500; }
+        .soap-container { display: flex; gap: 20px; justify-content: center; margin-bottom: 40px; flex-wrap: wrap; }
         .soap-bottle { display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.1s; }
         .soap-bottle:active { transform: scale(0.92); }
-        .soap-bottle img { width: 180px; height: 230px; object-fit: cover; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.08); margin-bottom: 15px; border: 4px solid transparent; transition: border-color 0.3s, transform 0.1s, box-shadow 0.3s; }
+        
+        .soap-bottle img { width: 150px; height: 195px; object-fit: cover; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.08); margin-bottom: 12px; border: 4px solid transparent; transition: border-color 0.3s, transform 0.1s, box-shadow 0.3s; }
         .normal-soap:hover img { border-color: #bdc3c7; box-shadow: 0 10px 25px rgba(120, 120, 120, 0.3); }
         .nudge-soap:hover img { border-color: #e74c3c; box-shadow: 0 10px 25px rgba(231, 76, 60, 0.4); }
-        .soap-label { font-size: 18px; font-weight: 900; color: #2c3e50; background: white; padding: 8px 24px; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.06); border: 2px solid #e2e8f0; pointer-events: none; }
+        .soap-label { font-size: 16px; font-weight: 900; color: #2c3e50; background: white; padding: 6px 20px; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.06); border: 2px solid #e2e8f0; pointer-events: none; }
         .nudge-soap .soap-label { color: #e74c3c; border-color: #fadbd8; }
-        #thank-you-msg { display: none; font-size: 19px; font-weight: bold; color: #2980b9; margin-top: 20px; background: #ebf5fb; padding: 16px 32px; border-radius: 12px; border-left: 5px solid #3498db; }
-        #admin-panel { display: none; width: 85%; max-width: 450px; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); margin-top: 30px; border: 2px solid #2c3e50; }
+        #thank-you-msg { display: none; font-size: 17px; font-weight: bold; color: #2980b9; margin-top: 10px; margin-bottom: 30px; background: #ebf5fb; padding: 16px 32px; border-radius: 12px; border-left: 5px solid #3498db; }
+        
+        #admin-panel { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; max-width: 400px; background: white; padding: 30px 25px; border-radius: 15px; box-shadow: 0 10px 50px rgba(0,0,0,0.4); border: 2px solid #2c3e50; z-index: 1000; }
+        .close-btn { position: absolute; top: 10px; right: 15px; background: none; border: none; font-size: 24px; cursor: pointer; color: #7f8c8d; }
+        .close-btn:hover { color: #e74c3c; }
+
         .bar-chart { width: 100%; background: #ecf0f1; border-radius: 10px; margin: 10px 0; overflow: hidden; height: 32px; position: relative; }
         .bar { height: 100%; display: flex; align-items: center; padding-left: 10px; color: white; font-weight: bold; transition: width 0.3s ease-out; white-space: nowrap; }
         .bar-normal { background-color: #7f8c8d; width: 0%; }
         .bar-nudge { background-color: #e74c3c; width: 0%; }
-        .reset-btn { background-color: #e74c3c; color: white; border: none; padding: 10px 20px; font-size: 15px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 15px; }
+        .reset-btn { background-color: #e74c3c; color: white; border: none; padding: 10px 20px; font-size: 15px; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 20px; width: 100%; }
         .reset-btn:hover { background-color: #c0392b; }
-        .secret-admin-btn { position: fixed; bottom: 0; right: 0; width: 60px; height: 60px; background: transparent; border: none; cursor: default; z-index: 999; }
+        
+        .secret-admin-btn { position: fixed; bottom: 15px; right: 15px; width: 45px; height: 45px; background: #3498db; color: white; border: none; border-radius: 50%; cursor: pointer; z-index: 999; font-size: 20px; box-shadow: 0 4px 10px rgba(52, 152, 219, 0.4); transition: transform 0.2s, background 0.2s; }
+        .secret-admin-btn:hover { background: #2980b9; transform: scale(1.1); }
         @keyframes pop { 0% { transform: scale(0.92); opacity: 0.8; } 50% { transform: scale(1.04); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body>
     <h1>손을 씻고 입장해 주세요!</h1>
     <p class="subtitle">어느 소독제를 사용하시겠습니까? (거품 짜기 펌핑!)</p>
+    
     <div class="soap-container">
         <!-- 기존 소독제 (오염) -->
         <div class="soap-bottle normal-soap" onclick="vote('normal')">
@@ -44,9 +52,13 @@
             <span class="soap-label">아이깨끗해</span>
         </div>
     </div>
+    
     <div id="thank-you-msg"></div>
+    
+    <!-- 중앙 팝업창 형태의 관리자 패널 -->
     <div id="admin-panel">
-        <h3 style="margin-top:0; color:#2c3e50; font-weight: 900;">🔒 관리자 전용 실시간 통계</h3>
+        <button class="close-btn" onclick="document.getElementById('admin-panel').style.display='none'">✖</button>
+        <h3 style="margin-top:0; color:#2c3e50; font-weight: 900;">🔒 실시간 통계 (서버 연동됨)</h3>
         <p style="margin-bottom: 5px; font-size: 14px; text-align: left; font-weight: bold; color: #5a626a;">기존 아이깨끗해 (일반)</p>
         <div class="bar-chart"><div id="bar-normal" class="bar bar-normal">0</div></div>
         <p style="margin-bottom: 5px; font-size: 14px; text-align: left; margin-top: 15px; font-weight: bold; color: #e74c3c;">빨간색 아이깨끗해 (넛지)</p>
@@ -54,46 +66,109 @@
         <p id="total-votes" style="margin-top: 15px; font-size: 14px; font-weight: bold; color: #2c3e50;"></p>
         <button class="reset-btn" onclick="resetData()">데이터 초기화하기</button>
     </div>
-    <button class="secret-admin-btn" onclick="openAdmin()"></button>
 
-    <script>
-        let normalVotes = parseInt(localStorage.getItem('normalVotesImg')) || 0;
-        let nudgeVotes = parseInt(localStorage.getItem('nudgeVotesImg')) || 0;
-        let myPumps = 0; 
-        function vote(type) {
-            if(type === 'normal') { normalVotes++; localStorage.setItem('normalVotesImg', normalVotes); } 
-            else { nudgeVotes++; localStorage.setItem('nudgeVotesImg', nudgeVotes); }
-            myPumps++; 
-            let total = normalVotes + nudgeVotes;
-            let msgBox = document.getElementById('thank-you-msg');
-            msgBox.style.display = 'block';
-            msgBox.innerHTML = "🫧 <b>" + myPumps + "번</b> 펌핑하셨습니다!<br><span style='font-size:13.5px; color:#555; font-weight:normal;'>현재까지 전체 누적 사용: " + total + "번</span>";
-            msgBox.style.animation = 'none'; 
-            setTimeout(() => { msgBox.style.animation = 'pop 0.3s ease-out'; }, 10);
-            if(document.getElementById('admin-panel').style.display === 'block') { updateGraph(); }
+    <!-- 눈에 띄는 파란색 관리자 버튼 ⚙️ -->
+    <button class="secret-admin-btn" onclick="openAdmin()">⚙️</button>
+
+    <!-- Firebase SDK 불러오기 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, get, child, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // 사용자가 제공한 파이어베이스 설정값 적용
+        const firebaseConfig = {
+            apiKey: "AIzaSyAy0s3n95UDTQCZonaDtxb2Jl4OejfMyuk",
+            authDomain: "nudge-2c23e.firebaseapp.com",
+            databaseURL: "https://nudge-2c23e-default-rtdb.firebaseio.com",
+            projectId: "nudge-2c23e",
+            storageBucket: "nudge-2c23e.firebasestorage.app",
+            messagingSenderId: "612578790471",
+            appId: "1:612578790471:web:fbf8438a8491c525c67562",
+            measurementId: "G-7N13919YKE"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        let myPumps = 0;
+
+        // 투표 함수 (서버에 실시간 반영)
+        window.vote = function(type) {
+            let dbRef = ref(db, 'votes/' + type);
+            
+            // 서버의 숫자를 안전하게 1 증가시킴 (동시 접속 충돌 방지)
+            runTransaction(dbRef, (currentVotes) => {
+                return (currentVotes || 0) + 1;
+            }).then(() => {
+                myPumps++;
+                
+                // 전체 데이터 가져와서 화면 메시지 갱신
+                get(ref(db, 'votes')).then((snapshot) => {
+                    if (snapshot.exists()) {
+                        let data = snapshot.val();
+                        let normal = data.normal || 0;
+                        let nudge = data.nudge || 0;
+                        let total = normal + nudge;
+
+                        let msgBox = document.getElementById('thank-you-msg');
+                        msgBox.style.display = 'block';
+                        msgBox.innerHTML = "🫧 <b>" + myPumps + "번</b> 펌핑하셨습니다!<br><span style='font-size:13.5px; color:#555; font-weight:normal;'>현재까지 전교생 누적 사용: " + total + "번</span>";
+
+                        msgBox.style.animation = 'none'; 
+                        setTimeout(() => { msgBox.style.animation = 'pop 0.3s ease-out'; }, 10);
+
+                        if(document.getElementById('admin-panel').style.display === 'block') {
+                            updateGraphDirect(normal, nudge);
+                        }
+                    }
+                });
+            });
         }
-        function updateGraph() {
-            let total = normalVotes + nudgeVotes;
+
+        // 관리자 패널 그래프 업데이트
+        window.updateGraph = function() {
+            get(ref(db, 'votes')).then((snapshot) => {
+                let data = snapshot.exists() ? snapshot.val() : { normal: 0, nudge: 0 };
+                updateGraphDirect(data.normal || 0, data.nudge || 0);
+            });
+        }
+
+        function updateGraphDirect(normal, nudge) {
+            let total = normal + nudge;
             if (total === 0) total = 1; 
-            let normalPercent = Math.round((normalVotes / total) * 100);
-            let nudgePercent = Math.round((nudgeVotes / total) * 100);
+
+            let normalPercent = Math.round((normal / total) * 100);
+            let nudgePercent = Math.round((nudge / total) * 100);
+
             document.getElementById('bar-normal').style.width = normalPercent + '%';
-            document.getElementById('bar-normal').innerText = normalVotes + '번 (' + normalPercent + '%)';
+            document.getElementById('bar-normal').innerText = normal + '번 (' + normalPercent + '%)';
+
             document.getElementById('bar-nudge').style.width = nudgePercent + '%';
-            document.getElementById('bar-nudge').innerText = nudgeVotes + '번 (' + nudgePercent + '%)';
-            document.getElementById('total-votes').innerText = "총 펌핑 횟수: " + (normalVotes + nudgeVotes) + "번";
+            document.getElementById('bar-nudge').innerText = nudge + '번 (' + nudgePercent + '%)';
+            
+            document.getElementById('total-votes').innerText = "총 펌핑 횟수: " + (normal + nudge) + "번";
         }
-        function openAdmin() {
+
+        // 관리자 모드 열기
+        window.openAdmin = function() {
             let pwd = prompt("관리자 비밀번호를 입력하세요:");
-            if(pwd === "0000") { document.getElementById('admin-panel').style.display = 'block'; updateGraph(); } 
-            else if (pwd !== null) { alert("비밀번호가 틀렸습니다."); }
+            if(pwd === "0000") { 
+                document.getElementById('admin-panel').style.display = 'block'; 
+                window.updateGraph(); 
+            } else if (pwd !== null) { 
+                alert("비밀번호가 틀렸습니다."); 
+            }
         }
-        function resetData() {
-            if(confirm("정말로 모든 데이터를 초기화 하시겠습니까?")) {
-                localStorage.setItem('normalVotesImg', 0); localStorage.setItem('nudgeVotesImg', 0);
-                normalVotes = 0; nudgeVotes = 0; myPumps = 0; 
-                document.getElementById('thank-you-msg').style.display = 'none';
-                updateGraph(); alert("데이터가 모두 초기화되었습니다.");
+
+        // 서버 데이터 초기화
+        window.resetData = function() {
+            if(confirm("정말로 서버의 모든 데이터를 초기화 하시겠습니까?")) {
+                set(ref(db, 'votes'), { normal: 0, nudge: 0 }).then(() => {
+                    myPumps = 0; 
+                    document.getElementById('thank-you-msg').style.display = 'none';
+                    window.updateGraph();
+                    alert("서버 데이터가 모두 초기화되었습니다.");
+                });
             }
         }
     </script>
