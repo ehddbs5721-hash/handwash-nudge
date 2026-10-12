@@ -14,8 +14,8 @@
         .soap-bottle:active { transform: scale(0.92); }
         
         .soap-bottle img { width: 150px; height: 195px; object-fit: cover; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.08); margin-bottom: 12px; border: 4px solid transparent; transition: border-color 0.3s, transform 0.1s, box-shadow 0.3s; }
-        .normal-soap:hover img { border-color: #bdc3c7; box-shadow: 0 10px 25px rgba(120, 120, 120, 0.3); }
-        .nudge-soap:hover img { border-color: #e74c3c; box-shadow: 0 10px 25px rgba(231, 76, 60, 0.4); }
+        .normal-soap img { border-color: #bdc3c7; }
+        .nudge-soap img { border-color: #e74c3c; }
         .soap-label { font-size: 16px; font-weight: 900; color: #2c3e50; background: white; padding: 6px 20px; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.06); border: 2px solid #e2e8f0; pointer-events: none; }
         .nudge-soap .soap-label { color: #e74c3c; border-color: #fadbd8; }
         #thank-you-msg { display: none; font-size: 17px; font-weight: bold; color: #2980b9; margin-top: 10px; margin-bottom: 30px; background: #ebf5fb; padding: 16px 32px; border-radius: 12px; border-left: 5px solid #3498db; }
@@ -42,12 +42,12 @@
     
     <div class="soap-container">
         <!-- 기존 소독제 (오염) -->
-        <div class="soap-bottle normal-soap" onclick="vote('normal')">
+        <div class="soap-bottle normal-soap" id="btn-normal">
             <img src="https://cdn.phototourl.com/member/2026-10-12-59e0f464-bd3c-4a97-a20e-ec9d4aec343a.png" alt="기존 아이깨끗해">
             <span class="soap-label">아이깨끗해</span>
         </div>
         <!-- 넛지 소독제 (빨간색) -->
-        <div class="soap-bottle nudge-soap" onclick="vote('nudge')">
+        <div class="soap-bottle nudge-soap" id="btn-nudge">
             <img src="https://i.postimg.cc/qq5XJp49/Gemini-Generated-Image-jwvnlqjwvnlqjwvn.png" alt="빨간색 아이깨끗해">
             <span class="soap-label">아이깨끗해</span>
         </div>
@@ -57,25 +57,24 @@
     
     <!-- 중앙 팝업창 형태의 관리자 패널 -->
     <div id="admin-panel">
-        <button class="close-btn" onclick="document.getElementById('admin-panel').style.display='none'">✖</button>
+        <button class="close-btn" id="close-admin">✖</button>
         <h3 style="margin-top:0; color:#2c3e50; font-weight: 900;">🔒 실시간 통계 (서버 연동됨)</h3>
         <p style="margin-bottom: 5px; font-size: 14px; text-align: left; font-weight: bold; color: #5a626a;">기존 아이깨끗해 (일반)</p>
         <div class="bar-chart"><div id="bar-normal" class="bar bar-normal">0</div></div>
         <p style="margin-bottom: 5px; font-size: 14px; text-align: left; margin-top: 15px; font-weight: bold; color: #e74c3c;">빨간색 아이깨끗해 (넛지)</p>
         <div class="bar-chart"><div id="bar-nudge" class="bar bar-nudge">0</div></div>
         <p id="total-votes" style="margin-top: 15px; font-size: 14px; font-weight: bold; color: #2c3e50;"></p>
-        <button class="reset-btn" onclick="resetData()">데이터 초기화하기</button>
+        <button class="reset-btn" id="reset-btn">데이터 초기화하기</button>
     </div>
 
     <!-- 눈에 띄는 파란색 관리자 버튼 ⚙️ -->
-    <button class="secret-admin-btn" onclick="openAdmin()">⚙️</button>
+    <button class="secret-admin-btn" id="admin-trigger">⚙️</button>
 
-    <!-- Firebase SDK 불러오기 -->
+    <!-- Firebase SDK 및 이벤트 연동 스크립트 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, get, child, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, set, get, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // 사용자가 제공한 파이어베이스 설정값 적용
         const firebaseConfig = {
             apiKey: "AIzaSyAy0s3n95UDTQCZonaDtxb2Jl4OejfMyuk",
             authDomain: "nudge-2c23e.firebaseapp.com",
@@ -92,17 +91,14 @@
 
         let myPumps = 0;
 
-        // 투표 함수 (서버에 실시간 반영)
-        window.vote = function(type) {
+        function vote(type) {
             let dbRef = ref(db, 'votes/' + type);
             
-            // 서버의 숫자를 안전하게 1 증가시킴 (동시 접속 충돌 방지)
             runTransaction(dbRef, (currentVotes) => {
                 return (currentVotes || 0) + 1;
             }).then(() => {
                 myPumps++;
                 
-                // 전체 데이터 가져와서 화면 메시지 갱신
                 get(ref(db, 'votes')).then((snapshot) => {
                     if (snapshot.exists()) {
                         let data = snapshot.val();
@@ -125,8 +121,7 @@
             });
         }
 
-        // 관리자 패널 그래프 업데이트
-        window.updateGraph = function() {
+        function updateGraph() {
             get(ref(db, 'votes')).then((snapshot) => {
                 let data = snapshot.exists() ? snapshot.val() : { normal: 0, nudge: 0 };
                 updateGraphDirect(data.normal || 0, data.nudge || 0);
@@ -149,28 +144,34 @@
             document.getElementById('total-votes').innerText = "총 펌핑 횟수: " + (normal + nudge) + "번";
         }
 
-        // 관리자 모드 열기
-        window.openAdmin = function() {
+        // 버튼 이벤트 연결 (클릭 오류 원인 완벽 차단)
+        document.getElementById('btn-normal').addEventListener('click', () => vote('normal'));
+        document.getElementById('btn-nudge').addEventListener('click', () => vote('nudge'));
+
+        document.getElementById('admin-trigger').addEventListener('click', () => {
             let pwd = prompt("관리자 비밀번호를 입력하세요:");
             if(pwd === "0000") { 
                 document.getElementById('admin-panel').style.display = 'block'; 
-                window.updateGraph(); 
+                updateGraph(); 
             } else if (pwd !== null) { 
                 alert("비밀번호가 틀렸습니다."); 
             }
-        }
+        });
 
-        // 서버 데이터 초기화
-        window.resetData = function() {
+        document.getElementById('close-admin').addEventListener('click', () => {
+            document.getElementById('admin-panel').style.display = 'none';
+        });
+
+        document.getElementById('reset-btn').addEventListener('click', () => {
             if(confirm("정말로 서버의 모든 데이터를 초기화 하시겠습니까?")) {
                 set(ref(db, 'votes'), { normal: 0, nudge: 0 }).then(() => {
                     myPumps = 0; 
                     document.getElementById('thank-you-msg').style.display = 'none';
-                    window.updateGraph();
+                    updateGraph();
                     alert("서버 데이터가 모두 초기화되었습니다.");
                 });
             }
-        }
+        });
     </script>
 </body>
 </html>
