@@ -35,6 +35,10 @@
         .secret-admin-btn:hover { background: #2980b9; transform: scale(1.1); }
         @keyframes pop { 0% { transform: scale(0.92); opacity: 0.8; } 50% { transform: scale(1.04); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
     </style>
+
+    <!-- Firebase SDK 구버전 호환 방식 (클릭 씹힘 방지) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </head>
 <body>
     <h1>손을 씻고 입장해 주세요!</h1>
@@ -42,12 +46,12 @@
     
     <div class="soap-container">
         <!-- 기존 소독제 (오염) -->
-        <div class="soap-bottle normal-soap" id="btn-normal">
+        <div class="soap-bottle normal-soap" onclick="vote('normal')">
             <img src="https://cdn.phototourl.com/member/2026-10-12-59e0f464-bd3c-4a97-a20e-ec9d4aec343a.png" alt="기존 아이깨끗해">
             <span class="soap-label">아이깨끗해</span>
         </div>
         <!-- 넛지 소독제 (빨간색) -->
-        <div class="soap-bottle nudge-soap" id="btn-nudge">
+        <div class="soap-bottle nudge-soap" onclick="vote('nudge')">
             <img src="https://i.postimg.cc/qq5XJp49/Gemini-Generated-Image-jwvnlqjwvnlqjwvn.png" alt="빨간색 아이깨끗해">
             <span class="soap-label">아이깨끗해</span>
         </div>
@@ -57,24 +61,21 @@
     
     <!-- 중앙 팝업창 형태의 관리자 패널 -->
     <div id="admin-panel">
-        <button class="close-btn" id="close-admin">✖</button>
+        <button class="close-btn" onclick="closeAdminPanel()">✖</button>
         <h3 style="margin-top:0; color:#2c3e50; font-weight: 900;">🔒 실시간 통계 (서버 연동됨)</h3>
         <p style="margin-bottom: 5px; font-size: 14px; text-align: left; font-weight: bold; color: #5a626a;">기존 아이깨끗해 (일반)</p>
         <div class="bar-chart"><div id="bar-normal" class="bar bar-normal">0</div></div>
         <p style="margin-bottom: 5px; font-size: 14px; text-align: left; margin-top: 15px; font-weight: bold; color: #e74c3c;">빨간색 아이깨끗해 (넛지)</p>
         <div class="bar-chart"><div id="bar-nudge" class="bar bar-nudge">0</div></div>
         <p id="total-votes" style="margin-top: 15px; font-size: 14px; font-weight: bold; color: #2c3e50;"></p>
-        <button class="reset-btn" id="reset-btn">데이터 초기화하기</button>
+        <button class="reset-btn" onclick="resetData()">데이터 초기화하기</button>
     </div>
 
     <!-- 눈에 띄는 파란색 관리자 버튼 ⚙️ -->
-    <button class="secret-admin-btn" id="admin-trigger">⚙️</button>
+    <button class="secret-admin-btn" onclick="openAdmin()">⚙️</button>
 
-    <!-- Firebase SDK 및 이벤트 연동 스크립트 -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, get, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
+    <script>
+        // 파이어베이스 설정값 연결
         const firebaseConfig = {
             apiKey: "AIzaSyAy0s3n95UDTQCZonaDtxb2Jl4OejfMyuk",
             authDomain: "nudge-2c23e.firebaseapp.com",
@@ -86,44 +87,43 @@
             measurementId: "G-7N13919YKE"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
         let myPumps = 0;
 
-        function vote(type) {
-            let dbRef = ref(db, 'votes/' + type);
+        // 투표 함수 (클릭 즉시 실행)
+        window.vote = function(type) {
+            let dbRef = db.ref('votes/' + type);
             
-            runTransaction(dbRef, (currentVotes) => {
+            dbRef.transaction((currentVotes) => {
                 return (currentVotes || 0) + 1;
             }).then(() => {
                 myPumps++;
                 
-                get(ref(db, 'votes')).then((snapshot) => {
-                    if (snapshot.exists()) {
-                        let data = snapshot.val();
-                        let normal = data.normal || 0;
-                        let nudge = data.nudge || 0;
-                        let total = normal + nudge;
+                db.ref('votes').once('value').then((snapshot) => {
+                    let data = snapshot.val() || { normal: 0, nudge: 0 };
+                    let normal = data.normal || 0;
+                    let nudge = data.nudge || 0;
+                    let total = normal + nudge;
 
-                        let msgBox = document.getElementById('thank-you-msg');
-                        msgBox.style.display = 'block';
-                        msgBox.innerHTML = "🫧 <b>" + myPumps + "번</b> 펌핑하셨습니다!<br><span style='font-size:13.5px; color:#555; font-weight:normal;'>현재까지 전교생 누적 사용: " + total + "번</span>";
+                    let msgBox = document.getElementById('thank-you-msg');
+                    msgBox.style.display = 'block';
+                    msgBox.innerHTML = "🫧 <b>" + myPumps + "번</b> 펌핑하셨습니다!<br><span style='font-size:13.5px; color:#555; font-weight:normal;'>현재까지 전교생 누적 사용: " + total + "번</span>";
 
-                        msgBox.style.animation = 'none'; 
-                        setTimeout(() => { msgBox.style.animation = 'pop 0.3s ease-out'; }, 10);
+                    msgBox.style.animation = 'none'; 
+                    setTimeout(() => { msgBox.style.animation = 'pop 0.3s ease-out'; }, 10);
 
-                        if(document.getElementById('admin-panel').style.display === 'block') {
-                            updateGraphDirect(normal, nudge);
-                        }
+                    if(document.getElementById('admin-panel').style.display === 'block') {
+                        updateGraphDirect(normal, nudge);
                     }
                 });
             });
         }
 
         function updateGraph() {
-            get(ref(db, 'votes')).then((snapshot) => {
-                let data = snapshot.exists() ? snapshot.val() : { normal: 0, nudge: 0 };
+            db.ref('votes').once('value').then((snapshot) => {
+                let data = snapshot.val() || { normal: 0, nudge: 0 };
                 updateGraphDirect(data.normal || 0, data.nudge || 0);
             });
         }
@@ -144,11 +144,7 @@
             document.getElementById('total-votes').innerText = "총 펌핑 횟수: " + (normal + nudge) + "번";
         }
 
-        // 버튼 이벤트 연결 (클릭 오류 원인 완벽 차단)
-        document.getElementById('btn-normal').addEventListener('click', () => vote('normal'));
-        document.getElementById('btn-nudge').addEventListener('click', () => vote('nudge'));
-
-        document.getElementById('admin-trigger').addEventListener('click', () => {
+        window.openAdmin = function() {
             let pwd = prompt("관리자 비밀번호를 입력하세요:");
             if(pwd === "0000") { 
                 document.getElementById('admin-panel').style.display = 'block'; 
@@ -156,22 +152,22 @@
             } else if (pwd !== null) { 
                 alert("비밀번호가 틀렸습니다."); 
             }
-        });
+        }
 
-        document.getElementById('close-admin').addEventListener('click', () => {
+        window.closeAdminPanel = function() {
             document.getElementById('admin-panel').style.display = 'none';
-        });
+        }
 
-        document.getElementById('reset-btn').addEventListener('click', () => {
+        window.resetData = function() {
             if(confirm("정말로 서버의 모든 데이터를 초기화 하시겠습니까?")) {
-                set(ref(db, 'votes'), { normal: 0, nudge: 0 }).then(() => {
+                db.ref('votes').set({ normal: 0, nudge: 0 }).then(() => {
                     myPumps = 0; 
                     document.getElementById('thank-you-msg').style.display = 'none';
                     updateGraph();
                     alert("서버 데이터가 모두 초기화되었습니다.");
                 });
             }
-        });
+        }
     </script>
 </body>
 </html>
